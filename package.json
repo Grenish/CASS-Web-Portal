@@ -1,0 +1,23 @@
+{
+  "name": "cass-web-portal",
+  "version": "1.0.0",
+  "description": "A computer application society web portal",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abhinaythakur4203/CASS-Web-Portal.git"
+  },
+  "author": "Abhinay",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Abhinaythakur4203/CASS-Web-Portal/issues"
+  },
+  "homepage": "https://github.com/Abhinaythakur4203/CASS-Web-Portal#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
