@@ -13,7 +13,11 @@ app.use(cors({
 app.use(express.json({limit: "16kb"}));
 app.use(express.urlencoded({extended: true,limit: "16kb"}));
 app.use(express.static("public"));
-
 app.use(cookieParser());
+
+// Routes
+import adminRouters from  "../src/routes/admin.routes.js";
+
+app.use('/api/v1/admin', adminRouters);
 
 export  {app }

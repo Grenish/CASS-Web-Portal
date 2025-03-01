@@ -1,53 +1,61 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
+import {Router} from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import Admin from '../models/admin.model.js';
+import { registerAdmin } from '../controllers/user.controllers.js';
 
 
 
-const router = express.Router();
 
+const router = Router();
+
+router.route("/registerAdmin").post(registerAdmin);
+
+
+
+
+// old admin login codes
+{
 // Admin Login
-router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+// router.post('/login', async (req, res) => {
+//     const { username, password } = req.body;
 
-    try {
-        const admin = await Admin.findOne({ username });
-        if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
+//     try {
+//         const admin = await Admin.findOne({ username });
+//         if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const isMatch = await bcrypt.compare(password, admin.password);
-        if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+//         const isMatch = await bcrypt.compare(password, admin.password);
+//         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: admin._id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
+//         const token = jwt.sign({ id: admin._id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+//         res.json({ token });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
 
-// Middleware for protected routes
-const verifyToken = (req, res, next) => {
-    const token = req.headers['authorization'];
-    if (!token) return res.status(403).json({ message: 'Access denied' });
+// // Middleware for protected routes
+// const verifyToken = (req, res, next) => {
+//     const token = req.headers['authorization'];
+//     if (!token) return res.status(403).json({ message: 'Access denied' });
 
-    try {
-        const decoded = jwt.verify(token.split(' ')[1], process.env.JWT_SECRET);
-        req.admin = decoded;
-        next();
-    } catch (error) {
-        res.status(401).json({ message: 'Invalid token' });
-    }
-};
+//     try {
+//         const decoded = jwt.verify(token.split(' ')[1], process.env.JWT_SECRET);
+//         req.admin = decoded;
+//         next();
+//     } catch (error) {
+//         res.status(401).json({ message: 'Invalid token' });
+//     }
+// };
 
-// Protected Admin Route
-router.get('/admin', verifyToken, async (req, res) => {
-    try {
-        const admin = await Admin.findById(req.admin.id).select('-password');
-        res.json(admin);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
+// // Protected Admin Route
+// router.get('/admin', verifyToken, async (req, res) => {
+//     try {
+//         const admin = await Admin.findById(req.admin.id).select('-password');
+//         res.json(admin);
+//     } catch (error) {
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+}
 
-module.exports = router;
+export default router;
