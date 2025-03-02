@@ -1,7 +1,8 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { ApiError } from '../utils/apiError.js';
-import { Admin } from "../models/admin.model.js"
+import { Admin } from "../models/admin.model.js";
+import jwt from "jsonwebtoken";
 
 
 
@@ -120,7 +121,7 @@ const logoutAdmin = asyncHandler(async (req, res) => {
     Admin.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
+            $set: {
                 refreshToken: undefined
             }
         },
@@ -131,22 +132,70 @@ const logoutAdmin = asyncHandler(async (req, res) => {
         httpOnly: true,
         secure: true
     };
-    
+
     return res
-    .status(200)
-    .clearCookie("accessToken", option)
-    .clearCookie("refreshToken", option)
-    .json(
-        new ApiResponse(
-            200,
-            {},
-            "User logged out successfully"))
+        .status(200)
+        .clearCookie("accessToken", option)
+        .clearCookie("refreshToken", option)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "User logged out successfully"))
 });
 
 
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incommingrefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incommingrefreshToken) {
+        throw new ApiError(401, "No valid refresh token found!");
+    }
+
+    try {
+        const decodedrefreshToken = await jwt.verify(incommingrefreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        const user = await Admin.findById(decodedrefreshToken?._id);
+
+        if (!user) {
+            throw new ApiError(403, "Invalid refresh token!");
+        }
+
+        if (incommingrefreshToken !== user?.refreshToken) {
+            throw new ApiError(403, "Refresh token has expired!");
+        }
+
+        const { accessToken, newRefreshToken } = await generateAccessTokenAndRefresToken(user._id);
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        };
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        accessToken,
+                        refreshToken: newRefreshToken
+                    },
+                    "User access token refreshed successfully")
+            )
+    } catch (error) {
+        throw new ApiError(500, "Failed to refresh access token!");
+
+    }
+
+});
 
 export {
     registerAdmin,
     loginAdmin,
     logoutAdmin,
+    refreshAccessToken,
 }

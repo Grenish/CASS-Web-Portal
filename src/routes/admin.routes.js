@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import { loginAdmin, logoutAdmin, registerAdmin } from '../controllers/user.controllers.js';
+import { loginAdmin, logoutAdmin, refreshAccessToken, registerAdmin } from '../controllers/user.controllers.js';
 import { verifyJWT } from '../middleware/auth.middleware.js';
 
 
@@ -12,6 +12,7 @@ const router = Router();
 router.route("/registerAdmin").post(registerAdmin);
 router.route("/login").post(loginAdmin);
 router.route("/logout").post(verifyJWT, logoutAdmin);
+router.route("/refresh-token").post(refreshAccessToken);
 
 
 
