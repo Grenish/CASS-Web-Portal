@@ -20,7 +20,7 @@ const AdminSchema = new Schema({
     },
     refreshToken: {
         type: String,
-        default: null
+        default: undefined
     },
     role: {
         type: String,
@@ -49,7 +49,7 @@ AdminSchema.methods.isPasswordCorrect = async function (password) {
 AdminSchema.methods.generateAccessToken = async function () {
     return await jwt.sign(
         {
-            id: this._id,
+            _id: this._id,
             username: this.username,
             email: this.email,
             role: this.role
@@ -63,7 +63,7 @@ AdminSchema.methods.generateAccessToken = async function () {
 AdminSchema.methods.generateRefreshToken = async function () {
     return await jwt.sign(
         {
-            id: this._id,
+            _id: this._id,
 
         },
         process.env.REFRESH_TOKEN_SECRET, {

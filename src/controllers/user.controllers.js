@@ -8,7 +8,7 @@ import { Admin } from "../models/admin.model.js"
 const generateAccessTokenAndRefresToken = async (userId) => {
 
     try {
-        const user = await User.findById(userId);
+        const user = await Admin.findById(userId);
         const accessToken = await user.generateAccessToken();
         const refreshToken = await user.generateRefreshToken();
 
@@ -73,7 +73,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Username or password is required!")
     }
 
-    const user = await Admin.findById({
+    const user = await Admin.findOne({
         $or:
             [{ username }, { email }]
     })
