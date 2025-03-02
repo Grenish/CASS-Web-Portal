@@ -1,7 +1,8 @@
 import {Router} from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import { registerAdmin } from '../controllers/user.controllers.js';
+import { loginAdmin, registerAdmin } from '../controllers/user.controllers.js';
+import { verifyJWT } from '../middleware/auth.middleware.js';
 
 
 
@@ -9,6 +10,7 @@ import { registerAdmin } from '../controllers/user.controllers.js';
 const router = Router();
 
 router.route("/registerAdmin").post(registerAdmin);
+router.route("/login").post(verifyJWT, loginAdmin);
 
 
 

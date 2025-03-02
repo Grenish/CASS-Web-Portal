@@ -1,4 +1,4 @@
-import mongoose,{Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -15,14 +15,23 @@ const AdminSchema = new Schema({
         unique: true
     },
     password: {
-        type: String, 
-        required: [true, "password is required"], 
+        type: String,
+        required: [true, "password is required"],
     },
-    role: { 
-        type: String, 
-        default: 'admin' 
+    refreshToken: {
+        type: String,
+        default: null
+    },
+    role: {
+        type: String,
+        default: 'admin'
     }
-});
+
+},
+    {
+        timestamps: true
+    }
+);
 
 // Hash password before saving
 AdminSchema.pre('save', async function (next) {
@@ -37,31 +46,31 @@ AdminSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
 
-AdminSchema.methods.generateAccessToken = async function(){
- return await jwt.sign(
+AdminSchema.methods.generateAccessToken = async function () {
+    return await jwt.sign(
         {
             id: this._id,
             username: this.username,
             email: this.email,
             role: this.role
         },
-        process.env.ACCESS_TOKEN_SECRET,{
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY  
-        }
+        process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+    }
     )
 };
 
-AdminSchema.methods.generateRefreshToken = async function(){
+AdminSchema.methods.generateRefreshToken = async function () {
     return await jwt.sign(
-           {
-               id: this._id,
-              
-           },
-           process.env.REFRESH_TOKEN_SECRET,{
-               expiresIn: process.env.REFRESH_TOKEN_EXPIRY  
-           }
-       )
-   }
+        {
+            id: this._id,
+
+        },
+        process.env.REFRESH_TOKEN_SECRET, {
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+    }
+    )
+}
 
 
 // Export the model
