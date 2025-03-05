@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
+import eventsRouters from '../src/routes/event.routes.js';
+
 const app = express();
 
 app.use(cors({
@@ -19,5 +21,6 @@ app.use(cookieParser());
 import adminRouters from  "../src/routes/admin.routes.js";
 
 app.use('/api/v1/admin', adminRouters);
+app.use('/api/v1/Events', eventsRouters);
 
 export  {app }

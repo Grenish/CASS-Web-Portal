@@ -220,6 +220,8 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 })
 
+
+// const updateAccountDetail = async
 export {
     registerAdmin,
     loginAdmin,
