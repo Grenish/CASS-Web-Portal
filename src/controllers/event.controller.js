@@ -77,9 +77,9 @@ const getEventById = asyncHandler(async (req, res) => {
     let event;
     
     // Check if identifier is a valid MongoDB ObjectId (search by ID)
-    if (mongoose.Types.ObjectId.isValid(identifier)) {
-        event = await Event.findById(identifier);
-    }
+    // if (mongoose.Types.ObjectId.isValid(identifier)) {
+    //     event = await Event.findById(identifier);
+    // }
     
     // If not found by ID, search by title (case-insensitive)
     if (!event) {
