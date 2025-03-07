@@ -1,38 +1,39 @@
 import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 
+// Cloudinary Configuration
+cloudinary.config({ 
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
+const uploadOnCloudinary = async (localFilePath) => {
+    try {
+        if (!localFilePath) return null;
 
-    // Configuration
-    cloudinary.config({ 
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-        api_key: process.env.CLOUDINARY_API_KEY, 
-        api_secret: process.env.CLOUDINARY_API_SECRET  // Click 'View API Keys' above to copy your API secret
-    });
+        // Upload to Cloudinary
+        const res = await cloudinary.uploader.upload(localFilePath, { resource_type: "auto" });
 
-    const uploadOnCloudinary = async (localFilePath)=>{
+        console.log("Upload Successful:", res.secure_url);
 
-        try {
-            if(!localFilePath) return null
-            //upload on cloudinary
-          const res=await  cloudinary.uploader.upload(localFilePath,{resource_type:"auto"
-
-            })
-            //SUCCESSFULLY UPLOADED ON CLOUD
-            // console.log("SUCCESSFULLY UPLOADED ON CLOUD",res.url);
-fs.unlinkSync(localFilePath)
-            return res;
-        } 
-        catch (error) {
-            fs.unlinkSync(localFilePath) //remove locally saved temporary file as the upload operation go failed
-
+        // Delete the local file after successful upload
+        if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
         }
+
+        return { url: res.secure_url };
+    } 
+    catch (error) {
+        console.error("Cloudinary Upload Error:", error);
+
+        // Remove local temp file only if it exists
+        if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
+
+        return null; // Return null to handle errors properly
     }
+};
 
-
-
-
-
-
-
-export { uploadOnCloudinary }
+export { uploadOnCloudinary };

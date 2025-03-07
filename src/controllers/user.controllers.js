@@ -118,11 +118,11 @@ const loginAdmin = asyncHandler(async (req, res) => {
 
 const logoutAdmin = asyncHandler(async (req, res) => {
 
-    Admin.findByIdAndUpdate(
+   Admin.findByIdAndUpdate(
         req.user._id,
         {
             $set: {
-                refreshToken: undefined
+                refreshToken: null
             }
         },
         { new: true }

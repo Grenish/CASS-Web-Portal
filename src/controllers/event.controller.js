@@ -23,11 +23,19 @@ const createEvent = asyncHandler(async (req, res) => {
     const { title, description, date, location } = req.body;
     const localMediaPath = req.file?.path;
 
+     //console.log(localMediaPath);
+    // console.log(title,
+    //             description,
+    //             date,
+    //             location
+    // );
+
     if (!title || !description || !date || !location || !localMediaPath) {
         throw new ApiError(400, "All fields and media file are required!");
     }
 
     const media = await uploadOnCloudinary(localMediaPath);
+    //console.log(media,"hello")
 
     if (!media.url) throw new ApiError(400, "Error while uploading media file!");
 

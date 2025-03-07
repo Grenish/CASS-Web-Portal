@@ -20,7 +20,7 @@ const AdminSchema = new Schema({
     },
     refreshToken: {
         type: String,
-        default: undefined
+        default: null
     },
     role: {
         type: String,

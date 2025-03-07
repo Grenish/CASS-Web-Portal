@@ -6,6 +6,7 @@ import {
     updateEvent,
     deleteEvent
 } from '../controllers/event.controller.js';
+
 import { verifyJWT } from '../middleware/auth.middleware.js';
 import {upload} from '../middleware/multer.middleware.js';
 
@@ -14,7 +15,7 @@ const router = Router();
 
 // Public Routes
 router.route('/').get(getAllEvents);
-router.route('/:id').get(getEventById);
+router.route('/:identifier').get(getEventById);
 
 // Admin-Protected Routes
 router.route('/create').post(verifyJWT, upload.single('media'), createEvent);
