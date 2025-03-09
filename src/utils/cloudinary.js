@@ -51,4 +51,21 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (mediaUrl) => {
+    try {
+        if (!mediaUrl) {
+            throw new ApiError(400, "No media URL provided for deletion");
+        }
+
+        const publicId = mediaUrl.split('/').pop().split('.')[0];
+
+        await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+        console.error("Cloudinary Deletion Error:", error);
+        throw new ApiError(500, "Error deleting old media from Cloudinary");
+    }
+}
+
+export { uploadOnCloudinary,
+    deleteFromCloudinary
+ };

@@ -9,19 +9,31 @@ import mongoose from 'mongoose';
 
 // Helper Function to Ensure Admin Access
 const checkAdmin = (req) => {
-    if (!req.user || req.user.role !== 'admin') {
+    if (req.user.role !== 'admin') {
         throw new ApiError(403, "Access denied! Admins only.");
     }
 };
 
 // Cloudinary destroy function
-const deleteFromCloudinary = async (publicId) => {
+const deleteFromCloudinary = async (mediaUrl) => {
     try {
+        if (!mediaUrl) {
+            throw new ApiError(400, "No media URL provided for deletion");
+        }
+
+        // Extract the public ID from the Cloudinary URL
+        const publicId = mediaUrl.split('/').pop().split('.')[0]; // Extracts filename without extension
+
+        //console.log("Deleting from Cloudinary:", publicId); // Debugging log
+
         await cloudinary.uploader.destroy(publicId);
+        //console.log("Successfully deleted:", publicId); // Debugging log
     } catch (error) {
+        console.error("Cloudinary Deletion Error:", error);
         throw new ApiError(500, "Error deleting old media from Cloudinary");
     }
 };
+
 
 /**  
  * @desc   Create a new event  

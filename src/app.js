@@ -8,7 +8,6 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
-import eventsRouters from '../src/routes/event.routes.js';
 
 const app = express();
 
@@ -28,8 +27,12 @@ app.use(cookieParser());
 
 // Routes
 import adminRouters from  "../src/routes/admin.routes.js";
+import eventsRouters from '../src/routes/event.routes.js';
+import facultyRouters from '../src/routes/faculty.routes.js';
+
 
 app.use('/api/v1/admin', adminRouters);
 app.use('/api/v1/Events', eventsRouters);
+app.use('/api/v1/Events', facultyRouters);
 
 export  {app }
