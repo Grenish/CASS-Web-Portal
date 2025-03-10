@@ -33,6 +33,6 @@ import facultyRouters from '../src/routes/faculty.routes.js';
 
 app.use('/api/v1/admin', adminRouters);
 app.use('/api/v1/Events', eventsRouters);
-app.use('/api/v1/Events', facultyRouters);
+app.use('/api/v1/Faculty', facultyRouters);
 
 export  {app }

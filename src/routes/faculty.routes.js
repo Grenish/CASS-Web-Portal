@@ -12,8 +12,8 @@ import { upload } from "../middleware/multer.middleware.js";
 const router = Router();
 
 router.route("/name/:identifier").get(getFacultyByName);
-router.route("/:id").put(verifyJWT, upload.single('image'), updateFaculty);
-router.route("/:id").delete(verifyJWT, deleteFaculty);
+router.route("/update/:id").patch(verifyJWT, upload.single('image'), updateFaculty);
+router.route("/delete/:id").delete(verifyJWT, deleteFaculty);
 router.route("/").get(getAllFaculties);
 router.route("/create").post(verifyJWT, upload.single('image'), createFaculty);
 

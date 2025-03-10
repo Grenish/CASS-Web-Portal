@@ -40,13 +40,17 @@ const createFaculty = asyncHandler(async (req, res) => {
 
     const image = await uploadOnCloudinary(localMediaPath);
 
+    if (!image.url) {
+        throw new ApiError(500, "Error uploading image to Cloudinary");
+    }
+
     const faculty = new Faculty({
         name,
         designation,
         department,
         email,
         testimonial,
-        image
+        image: image.url
     });
 
     await faculty.save();
@@ -89,47 +93,55 @@ const getFacultyByName = asyncHandler(async (req, res) => {
 });
 
 const updateFaculty = asyncHandler(async (req, res) => {
-    
-    checkAdmin(req);
+    try {
+        checkAdmin(req);
 
-    const { name, designation, department, email, testimonial } = req.body;
-    const localMediaPath = req.file?.path;
-    const { id } = req.params;
+        const { name, designation, department, email, testimonial } = req.body;
+        const localMediaPath = req.file?.path;
+        const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new ApiError(400, "Invalid faculty ID");
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw new ApiError(400, "Invalid faculty ID");
+        }
+
+        const faculty = await Faculty.findById(id);
+
+        if (!faculty) {
+            throw new ApiError(404, "Faculty member not found");
+        }
+
+        const oldImage = faculty.image;
+        let image;
+
+        if (localMediaPath) {
+            image = await uploadOnCloudinary(localMediaPath);
+
+            if (!image.url) {
+                throw new ApiError(500, "Error uploading image to Cloudinary");
+            }
+        }
+
+        faculty.name = name || faculty.name;
+        faculty.designation = designation || faculty.designation;
+        faculty.department = department || faculty.department;
+        faculty.email = email || faculty.email;
+        faculty.testimonial = testimonial || faculty.testimonial;
+        faculty.image = image?.url || faculty.image;
+
+        await faculty.save();
+
+        if (localMediaPath) {
+            await deleteFromCloudinary(oldImage);
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, { faculty }, "Faculty member updated successfully!")
+            );
+    } catch (error) {
+        return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
     }
-
-    if (!name || !designation || !department || !email || !localMediaPath) {
-        throw new ApiError(400, "All fields and media file are required!");
-    }
-
-    const faculty = await Faculty.findById(id);
-
-    if (!faculty) {
-        throw new ApiError(404, "Faculty member not found");
-    }
-
-    const oldImage = faculty.image;
-
-    const image = await uploadOnCloudinary(localMediaPath);
-
-    faculty.name = name;
-    faculty.designation = designation;
-    faculty.department = department;
-    faculty.email = email;
-    faculty.testimonial = testimonial;
-    faculty.image = image;
-
-    await faculty.save();
-
-    await deleteFromCloudinary(oldImage);
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, { faculty }, "Faculty member updated successfully!")
-        );
 });
 
 const deleteFaculty = asyncHandler(async (req, res) => {
@@ -154,12 +166,12 @@ const deleteFaculty = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Error deleting faculty image from Cloudinary");
     }
 
-    await faculty.delete();
+    await Faculty.findByIdAndDelete(id);
 
     return res
         .status(200)
         .json(
-            new ApiResponse(200, null, "Faculty member deleted successfully!")
+            new ApiResponse(200, {}, "Faculty member deleted successfully!")
         );
 });
 
