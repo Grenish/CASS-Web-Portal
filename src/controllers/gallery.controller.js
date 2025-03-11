@@ -15,7 +15,11 @@ const createGallery = asyncHandler(async (req, res) => {
     try {
         checkAdmin(req); // Ensure only admin can create gallery
     } catch (error) {
-        return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
+        return res
+        .status(error.statusCode || 500)
+        .json(
+            new ApiResponse(error.statusCode || 500, null, error.message)
+        );
     }
 
     const { title, description } = req.body;
@@ -24,6 +28,7 @@ const createGallery = asyncHandler(async (req, res) => {
     }
 
     let images = [];
+
     for (const file of req.files) {
         const uploadedImage = await uploadOnCloudinary(file.path);
         if (uploadedImage.url) {
@@ -33,7 +38,11 @@ const createGallery = asyncHandler(async (req, res) => {
 
     const gallery = await Gallery.create({ title, description, images });
 
-    res.status(201).json(new ApiResponse(201, gallery, "Gallery created successfully!"));
+    res
+    .status(201)
+    .json(
+        new ApiResponse(201, gallery, "Gallery created successfully!")
+    );
 });
 
 // ✅ Add Images to an Existing Gallery
@@ -41,11 +50,15 @@ const addImagesToGallery = asyncHandler(async (req, res) => {
     try {
         checkAdmin(req); // Ensure only admin can update gallery
     } catch (error) {
-        return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
+        return res
+        .status(error.statusCode || 500)
+        .json(new ApiResponse(error.statusCode || 500, null, error.message)
+    );
     }
 
     const { id } = req.params;
     const gallery = await Gallery.findById(id);
+
     if (!gallery) throw new ApiError(404, "Gallery not found!");
 
     if (!req.files || req.files.length === 0) {
@@ -60,7 +73,11 @@ const addImagesToGallery = asyncHandler(async (req, res) => {
     }
 
     await gallery.save();
-    res.status(200).json(new ApiResponse(200, gallery, "Images added to gallery successfully!"));
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, gallery, "Images added to gallery successfully!")
+    );
 });
 
 // ✅ Get All Galleries
@@ -68,7 +85,11 @@ const getAllGalleries = asyncHandler(async (req, res) => {
     const galleries = await Gallery.find().sort({ createdAt: -1 });
     if (!galleries.length) throw new ApiError(404, "No galleries found!");
 
-    res.status(200).json(new ApiResponse(200, galleries, "All galleries fetched successfully"));
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, galleries, "All galleries fetched successfully")
+    );
 });
 
 // ✅ Get a Specific Gallery by ID
@@ -77,7 +98,11 @@ const getGalleryById = asyncHandler(async (req, res) => {
     const gallery = await Gallery.findById(id);
     if (!gallery) throw new ApiError(404, "Gallery not found!");
 
-    res.status(200).json(new ApiResponse(200, gallery, "Gallery details fetched successfully"));
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, gallery, "Gallery details fetched successfully")
+    );
 });
 
 // ✅ Delete a Specific Image from a Gallery
@@ -90,9 +115,11 @@ const deleteImageFromGallery = asyncHandler(async (req, res) => {
 
     const { id, imageId } = req.params;
     const gallery = await Gallery.findById(id);
+    
     if (!gallery) throw new ApiError(404, "Gallery not found!");
 
     const imageToDelete = gallery.images.find(img => img._id.toString() === imageId);
+
     if (!imageToDelete) throw new ApiError(404, "Image not found in gallery!");
 
     try {
