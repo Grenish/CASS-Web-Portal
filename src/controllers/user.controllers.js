@@ -26,7 +26,7 @@ const generateAccessTokenAndRefresToken = async (userId) => {
 
 
 const registerAdmin = asyncHandler(async (req, res) => {
-    const { username, password, email } = req.body;
+    const { username, password, email,role} = req.body;
 
     if ([username, password, email].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required!")
@@ -42,14 +42,15 @@ const registerAdmin = asyncHandler(async (req, res) => {
     )
 
     if (existingAdmin) {
-        throw new ApiError(409, "Admin already exists!")
+        throw new ApiError(409, "User with username/email already exists!");
     }
 
     const user = await Admin.create(
         {
             username,
             password,
-            email
+            email,
+            role
         })
 
     const createdUser = await Admin.findById(user._id).select(

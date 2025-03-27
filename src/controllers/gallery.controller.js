@@ -4,16 +4,16 @@ import { ApiError } from '../utils/apiError.js';
 import { Gallery } from '../models/gallery.model.js';
 import { uploadOnCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
 
-const checkAdmin = (req) => {
-    if (req.user.role !== 'admin') {
-        throw new ApiError(403, "Access denied! Admins only.");
-    }
-}
+const checkUserRole = (req) => {
+  if (req.user.role !== "admin" && req.user.role !== "contentManager") {
+    throw new ApiError(403, "Access denied! Admins and Content Managers only.");
+  }
+};
 
 // ✅ Create a New Gallery Bucket (With Multiple Images)
 const createGallery = asyncHandler(async (req, res) => {
     try {
-        checkAdmin(req); // Ensure only admin can create gallery
+        checkUserRole(req); // Ensure only admin can create gallery
     } catch (error) {
         return res
         .status(error.statusCode || 500)
@@ -48,7 +48,7 @@ const createGallery = asyncHandler(async (req, res) => {
 // ✅ Add Images to an Existing Gallery
 const addImagesToGallery = asyncHandler(async (req, res) => {
     try {
-        checkAdmin(req); // Ensure only admin can update gallery
+        checkUserRole(req); // Ensure only admin can update gallery
     } catch (error) {
         return res
         .status(error.statusCode || 500)
@@ -108,7 +108,7 @@ const getGalleryById = asyncHandler(async (req, res) => {
 // ✅ Delete a Specific Image from a Gallery
 const deleteImageFromGallery = asyncHandler(async (req, res) => {
     try {
-        checkAdmin(req); // Ensure only admin can delete images
+        checkUserRole(req); // Ensure only admin can delete images
     } catch (error) {
         return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
     }
@@ -137,7 +137,7 @@ const deleteImageFromGallery = asyncHandler(async (req, res) => {
 // ✅ Delete an Entire Gallery (Including All Images)
 const deleteGallery = asyncHandler(async (req, res) => {
     try {
-        checkAdmin(req); // Ensure only admin can delete gallery
+        checkUserRole(req); // Ensure only admin can delete gallery
     } catch (error) {
         return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
     }

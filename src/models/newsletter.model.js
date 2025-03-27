@@ -14,11 +14,6 @@ const newsBlogSchema = new Schema({
         type: Date,
         required: true
     },
-    category: {
-        type: String,
-        enum: ["News", "Blog"],
-        required: true
-    },
     media: {
         type: String,
         required: true
