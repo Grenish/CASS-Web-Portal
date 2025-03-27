@@ -7,9 +7,9 @@ import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
 
 // Helper Function to Ensure Admin Access
-const checkAdmin = (req) => {
-  if (req.user.role !== "admin") {
-    throw new ApiError(403, "Access denied! Admins only.");
+const checkUserRole = (req) => {
+  if (req.user.role !== "admin" && req.user.role !== "contentManager") {
+    throw new ApiError(403, "Access denied! Admins and Content Managers only.");
   }
 };
 
@@ -28,13 +28,8 @@ const deleteFromCloudinary = async (mediaUrl) => {
   }
 };
 
-/**
- * @desc   Create a new event
- * @route  POST /events/create
- * @access Admin
- */
 const createEvent = asyncHandler(async (req, res) => {
-  checkAdmin(req);
+  checkUserRole(req);
 
   const { title, description, category, date, location } = req.body;
   const localMediaPath = req.file?.path;
@@ -66,11 +61,7 @@ const createEvent = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newEvent, "Event created successfully!"));
 });
 
-/**
- * @desc   Get all events
- * @route  GET /events
- * @access Public
- */
+
 const getAllEvents = asyncHandler(async (req, res) => {
   const events = await Event.find().sort({ createdAt: -1 });
   if (!events.length) {
@@ -81,23 +72,15 @@ const getAllEvents = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, events, "All events fetched successfully"));
 });
 
-/**
- * @desc   Get event by ID or Title
- * @route  GET /events/:identifier
- * @access Public
- */
+
 const getEventById = asyncHandler(async (req, res) => {
   const { identifier } = req.params;
-  let event = null;
-
-  if (mongoose.Types.ObjectId.isValid(identifier)) {
-    event = await Event.findById(identifier);
-  }
-  if (!event) {
-    event = await Event.findOne({
-      title: { $regex: new RegExp(identifier, "i") },
-    });
-  }
+  const event = await Event.findOne({
+    $or: [
+      { _id: mongoose.Types.ObjectId.isValid(identifier) ? identifier : null },
+      { title: { $regex: new RegExp(identifier, "i") } },
+    ],
+  });
   if (!event) {
     throw new ApiError(404, "Event not found!");
   }
@@ -106,13 +89,9 @@ const getEventById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, event, "Event details fetched successfully"));
 });
 
-/**
- * @desc   Update an event
- * @route  PATCH /events/update/:id
- * @access Admin
- */
+
 const updateEvent = asyncHandler(async (req, res) => {
-  checkAdmin(req);
+  checkUserRole(req);
 
   const { id } = req.params;
   const cleanedId = id.trim();
@@ -132,7 +111,7 @@ const updateEvent = asyncHandler(async (req, res) => {
       await deleteFromCloudinary(event.media);
     }
     const uploadedMedia = await uploadOnCloudinary(req.file.path);
-    media = uploadedMedia.url || event.media;
+    media = uploadedMedia.url;
   }
 
   // Update only the provided fields
@@ -148,13 +127,8 @@ const updateEvent = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, event, "Event updated successfully"));
 });
 
-/**
- * @desc   Delete an event
- * @route  DELETE /events/delete/:id
- * @access Admin
- */
 const deleteEvent = asyncHandler(async (req, res) => {
-  checkAdmin(req);
+  checkUserRole(req);
 
   const { id } = req.params;
   const event = await Event.findById(id);
@@ -172,4 +146,10 @@ const deleteEvent = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, {}, "Event deleted successfully"));
 });
 
-export { createEvent, getAllEvents, getEventById, updateEvent, deleteEvent };
+export {
+  createEvent,
+  getAllEvents,
+  getEventById,
+  updateEvent,
+  deleteEvent
+};
