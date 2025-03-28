@@ -30,11 +30,13 @@ import adminRouters from  "../src/routes/admin.routes.js";
 import eventsRouters from '../src/routes/event.routes.js';
 import facultyRouters from '../src/routes/faculty.routes.js';
 import galleryRouters from '../src/routes/gallery.routes.js';
+import feedbackRouters from '../src/routes/feedback.routes.js';
 
 
 app.use('/api/v1/admin', adminRouters);
 app.use('/api/v1/Events', eventsRouters);
 app.use('/api/v1/Faculty', facultyRouters);
 app.use('/api/v1/Gallery', galleryRouters);
+app.use('/api/v1/Feedback', feedbackRouters);
 
 export  {app }
