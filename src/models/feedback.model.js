@@ -29,6 +29,7 @@ const feedbackSchema = new Schema({
     message: {
         type: String,
         required: true,
+        trim: true,
         maxlength: 500,
 
     },

@@ -9,19 +9,29 @@ import { checkUserRole } from '../middleware/auth.middleware.js';
 
 const addFeedback = asyncHandler(async (req, res) => {
     const { message, anonymous, rating } = req.body;
-
-    if (!message || !rating) {
-        throw new ApiError(400, "Message and rating are required!");
-    }
+    const {eventId} = req.params;
 
     if (!req.user) {
         throw new ApiError(401, "Unauthorized! User information is missing.");
     }
 
+    if (!eventId) {
+        throw new ApiError(400, "Event ID is required!");
+    }
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+        throw new ApiError(400, "Invalid event ID format!");
+    }
+
+    if (!message || !rating) {
+        throw new ApiError(400, "Message and rating are required!");
+    }
+
+
     const feedback = await Feedback.create({
         message,
         anonymous,
         rating,
+        event: eventId,
         user: req.user._id
     });
 
@@ -29,6 +39,7 @@ const addFeedback = asyncHandler(async (req, res) => {
         message,
         anonymous,
         rating,
+        event: eventId,
         user: anonymous ? null : {
             username: req.user.username,
             email: req.user.email

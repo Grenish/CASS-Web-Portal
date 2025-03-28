@@ -10,20 +10,12 @@ import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// Route to add feedback (verifyJWTed route)
-router.route.post("/add", verifyJWT, addFeedback);
-
-// Route to get all feedback (admin or content manager only)
-router.route.get("/", verifyJWT, getAllFeedback);
-
-// Route to delete a specific feedback by ID (admin only)
-router.route.delete("/:id", verifyJWT, deleteFeedback);
-
-// Route to delete all feedback (admin only)
-router.route.delete("/", verifyJWT, deleteAllFeedback);
-
-// Route to get feedback by event ID (admin or content manager only)
-router.route.get("/event/:eventId", verifyJWT, getFeedbackByEvent);
+// Routes
+router.route('/add/:eventId').post(verifyJWT, addFeedback); // Add feedback (protected)
+router.route('/').get(verifyJWT, getAllFeedback)   // Get all feedback (protected)
+router.route('/').delete(verifyJWT, deleteAllFeedback); // Delete all feedback (protected)
+router.route('/:id').delete(verifyJWT, deleteFeedback); // Delete specific feedback by ID (protected)
+router.route('/event/:eventId').get(verifyJWT, getFeedbackByEvent); // Get feedback by event ID (protected)
 
 export default router;
 
