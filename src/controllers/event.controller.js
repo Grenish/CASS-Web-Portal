@@ -5,13 +5,8 @@ import { Event } from "../models/event.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
+import { checkUserRole } from "../middleware/auth.middleware.js";
 
-// Helper Function to Ensure Admin Access
-const checkUserRole = (req) => {
-  if (req.user.role !== "admin" && req.user.role !== "contentManager") {
-    throw new ApiError(403, "Access denied! Admins and Content Managers only.");
-  }
-};
 
 // Cloudinary destroy function
 const deleteFromCloudinary = async (mediaUrl) => {

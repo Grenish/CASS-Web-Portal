@@ -5,12 +5,8 @@ import { Faculty } from '../models/faculty.model.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
 import mongoose from 'mongoose';
+import { checkAdmin } from '../middleware/auth.middleware.js';
 
-const checkAdmin = (req) => {
-    if (req.user.role !== 'admin') {
-        throw new ApiError(403, "Access denied! Admins only.");
-    }
-};
 
 const deleteFromCloudinary = async (mediaUrl) => {
     if (!mediaUrl) return;

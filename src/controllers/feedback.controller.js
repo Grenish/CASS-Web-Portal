@@ -3,16 +3,9 @@ import { ApiResponse } from '../utils/apiResponse.js';
 import { ApiError } from '../utils/apiError.js';
 import mongoose from "mongoose";
 import { Feedback } from '../models/feedback.model.js';
+import { checkUserRole } from '../middleware/auth.middleware.js';
 
 
-const checkUserRole = (req) => {
-    if (!req.user || !req.user.role) {
-        throw new ApiError(401, "Unauthorized! User information is missing.");
-    }
-    if (req.user.role !== "admin" && req.user.role !== "contentManager") {
-        throw new ApiError(403, "Access denied! Admins and Content Managers only.");
-    }
-};
 
 const addFeedback = asyncHandler(async (req, res) => {
     const { message, anonymous, rating } = req.body;

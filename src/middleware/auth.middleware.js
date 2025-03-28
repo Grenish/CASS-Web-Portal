@@ -27,3 +27,19 @@ export const verifyJWT = asyncHandler(async(req, _, next) => {
     }
     
 })
+
+export const checkUserRole = (req) => {
+    if (!req.user || !req.user.role) {
+        throw new ApiError(401, "Unauthorized! User information is missing.");
+    }
+    if (req.user.role !== "admin" && req.user.role !== "contentManager") {
+        throw new ApiError(403, "Access denied! Admins and Content Managers only.");
+    }
+};
+
+export const checkAdmin = (req) => {
+    if (req.user.role !== 'admin') {
+        throw new ApiError(403, "Access denied! Admins only.");
+    }
+};
+

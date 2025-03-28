@@ -3,12 +3,7 @@ import { ApiResponse } from '../utils/apiResponse.js';
 import { ApiError } from '../utils/apiError.js';
 import { Gallery } from '../models/gallery.model.js';
 import { uploadOnCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
-
-const checkUserRole = (req) => {
-  if (req.user.role !== "admin" && req.user.role !== "contentManager") {
-    throw new ApiError(403, "Access denied! Admins and Content Managers only.");
-  }
-};
+import { checkUserRole } from '../middleware/auth.middleware.js';
 
 // ✅ Create a New Gallery Bucket (With Multiple Images)
 const createGallery = asyncHandler(async (req, res) => {
