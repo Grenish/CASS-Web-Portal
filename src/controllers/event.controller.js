@@ -7,7 +7,6 @@ import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
 import { checkUserRole } from "../middleware/auth.middleware.js";
 
-
 // Cloudinary destroy function
 const deleteFromCloudinary = async (mediaUrl) => {
   if (!mediaUrl) {
@@ -26,7 +25,7 @@ const deleteFromCloudinary = async (mediaUrl) => {
 const createEvent = asyncHandler(async (req, res) => {
   checkUserRole(req);
 
-  const { title, description, category, date, location } = req.body;
+  const { title, description, category, date, time, content, location } = req.body;
   const localMediaPath = req.file?.path;
 
   if (
@@ -34,6 +33,8 @@ const createEvent = asyncHandler(async (req, res) => {
     !description ||
     !category ||
     !date ||
+    !time ||
+    !content ||
     !location ||
     !localMediaPath
   ) {
@@ -48,6 +49,8 @@ const createEvent = asyncHandler(async (req, res) => {
     description,
     category,
     date,
+    time,
+    content,
     media: media.url,
     location,
   });
@@ -55,7 +58,6 @@ const createEvent = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, newEvent, "Event created successfully!"));
 });
-
 
 const getAllEvents = asyncHandler(async (req, res) => {
   const events = await Event.find().sort({ createdAt: -1 });
@@ -66,7 +68,6 @@ const getAllEvents = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, events, "All events fetched successfully"));
 });
-
 
 const getEventById = asyncHandler(async (req, res) => {
   const { identifier } = req.params;
@@ -84,7 +85,6 @@ const getEventById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, event, "Event details fetched successfully"));
 });
 
-
 const updateEvent = asyncHandler(async (req, res) => {
   checkUserRole(req);
 
@@ -98,7 +98,7 @@ const updateEvent = asyncHandler(async (req, res) => {
   const event = await Event.findById(cleanedId);
   if (!event) throw new ApiError(404, "Event not found!");
 
-  const { title, description, date, location } = req.body;
+  const { title, description, date, time, content, category, location } = req.body;
   let media = event.media;
 
   if (req.file?.path) {
@@ -113,6 +113,9 @@ const updateEvent = asyncHandler(async (req, res) => {
   event.title = title || event.title;
   event.description = description || event.description;
   event.date = date || event.date;
+  event.time = time || event.time;
+  event.content = content || event.content;
+  event.category = category || event.category;
   event.location = location || event.location;
   event.media = media;
 
