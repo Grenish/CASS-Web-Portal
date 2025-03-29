@@ -9,7 +9,7 @@ import { checkUserRole } from '../middleware/auth.middleware.js';
 
 const addFeedback = asyncHandler(async (req, res) => {
     const { message, anonymous, rating } = req.body;
-    const {eventId} = req.params;
+    const { eventId } = req.params;
 
     if (!req.user) {
         throw new ApiError(401, "Unauthorized! User information is missing.");
@@ -20,6 +20,12 @@ const addFeedback = asyncHandler(async (req, res) => {
     }
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
         throw new ApiError(400, "Invalid event ID format!");
+    }
+
+    const existingFeedback = await Feedback.findOne({ event: eventId, user: req.user._id });
+    
+    if (existingFeedback) {
+        throw new ApiError(400, "You have already submitted feedback for this event!");
     }
 
     if (!message || !rating) {
