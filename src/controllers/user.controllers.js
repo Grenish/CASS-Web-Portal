@@ -26,7 +26,7 @@ const generateAccessTokenAndRefresToken = async (userId) => {
 
 
 const registerAdmin = asyncHandler(async (req, res) => {
-    const { username, password, email,role} = req.body;
+    const { username, password, email, role } = req.body;
 
     if ([username, password, email].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required!")
@@ -119,7 +119,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
 
 const logoutAdmin = asyncHandler(async (req, res) => {
 
-   Admin.findByIdAndUpdate(
+    Admin.findByIdAndUpdate(
         req.user._id,
         {
             $set: {
@@ -197,7 +197,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
 
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!(currentPassword || newPassword)) {
         throw new ApiError(400, "Current password and new password are required!")
     }
@@ -221,12 +221,25 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 })
 
+const validateToken = asyncHandler(async (req, res) => {
+    const user = req.user;
 
-// const updateAccountDetail = async
+    if (!user) {
+        throw new ApiError(401, "Invalid token!");
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200,user, "Token is valid!"));
+});
+
+
 export {
     registerAdmin,
     loginAdmin,
     logoutAdmin,
     refreshAccessToken,
     changeCurrentPassword,
+    validateToken
 }
