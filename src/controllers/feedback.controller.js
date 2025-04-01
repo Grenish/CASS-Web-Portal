@@ -132,7 +132,21 @@ const getFeedbackByEvent = asyncHandler(async (req, res) => {
         throw new ApiError(404, "No feedback found for this event!");
     }
 
-    return res.status(200).json(new ApiResponse(200, { feedback }, "Feedback retrieved successfully!"));
+    const processedFeedback = feedback.map((item) => {
+        if (item.anonymous) {
+            return {
+                ...item.toObject(),
+                user: null, // Remove user details for anonymous feedback
+            };
+        }
+        return item;
+    });
+
+    if (processedFeedback.length === 0) {
+        return res.status(200).json(new ApiResponse(200, { feedback: [] }, "No feedback found!"));
+    }
+
+    return res.status(200).json(new ApiResponse(200, { feedback: processedFeedback }, "Feedback retrieved successfully!"));
 });
 
 export {

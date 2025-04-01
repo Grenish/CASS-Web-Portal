@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const newsBlogSchema = new Schema({
+const newsletterSchema = new Schema({
 
     title: {
         type: String,
@@ -18,12 +18,8 @@ const newsBlogSchema = new Schema({
         type: String,
         required: true
     },
-    location: {
-        type: String,
-        required: true
-    },
 
 }, { timestamps: true });
 
-export const newsBlog = mongoose.model('newsBlog', newsBlogSchema);
+export const Newsletter = mongoose.model('newsletter', newsletterSchema);
 

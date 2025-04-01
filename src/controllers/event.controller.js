@@ -2,25 +2,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import { Event } from "../models/event.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
 import { checkUserRole } from "../middleware/auth.middleware.js";
 
-// Cloudinary destroy function
-const deleteFromCloudinary = async (mediaUrl) => {
-  if (!mediaUrl) {
-    throw new ApiError(400, "No media URL provided for deletion");
-  }
-  try {
-    // Extract the public ID from the Cloudinary URL
-    const publicId = mediaUrl.split("/").pop().split(".")[0];
-    await cloudinary.uploader.destroy(publicId);
-  } catch (error) {
-    console.error("Cloudinary Deletion Error:", error);
-    throw new ApiError(500, "Error deleting old media from Cloudinary");
-  }
-};
 
 const createEvent = asyncHandler(async (req, res) => {
   checkUserRole(req);
