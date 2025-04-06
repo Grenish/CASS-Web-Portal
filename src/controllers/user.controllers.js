@@ -3,6 +3,7 @@ import { ApiResponse } from '../utils/apiResponse.js';
 import { ApiError } from '../utils/apiError.js';
 import { Admin } from "../models/admin.model.js";
 import jwt from "jsonwebtoken";
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 
 
@@ -39,13 +40,18 @@ const registerAdmin = asyncHandler(async (req, res) => {
             $or: [
                 { username },
                 { email },
-                { phone }
             ]
         }
     )
 
+    const existingPhone = await Admin.findOne({ phone })
+
+    if (existingPhone) {
+        throw new ApiError(409, "User with this phone number already exists!");
+    }
+
     if (existingAdmin) {
-        throw new ApiError(409, "User with username/email/phone already exists!");
+        throw new ApiError(409, "User with username/email already exists!");
     }
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
