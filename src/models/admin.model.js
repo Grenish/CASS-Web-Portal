@@ -14,6 +14,14 @@ const AdminSchema = new Schema(
       required: true,
       unique: true,
     },
+    phone: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    avatar: {
+      type: String,
+    },
     password: {
       type: String,
       required: [true, "password is required"],
@@ -24,7 +32,7 @@ const AdminSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "contentManager","user"],
+      enum: ["admin", "contentManager", "user"],
       default: "user",
     },
   },

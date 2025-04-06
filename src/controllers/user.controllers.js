@@ -26,9 +26,11 @@ const generateAccessTokenAndRefresToken = async (userId) => {
 
 
 const registerAdmin = asyncHandler(async (req, res) => {
-    const { username, password, email, role } = req.body;
+    const { username, password, email, phone, role } = req.body;
 
-    if ([username, password, email].some((field) => field?.trim() === "")) {
+    const avatar = req.file?.path || null;
+
+    if ([username, password, email, phone].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required!")
     }
 
@@ -36,22 +38,44 @@ const registerAdmin = asyncHandler(async (req, res) => {
         {
             $or: [
                 { username },
-                { email }
+                { email },
+                { phone }
             ]
         }
     )
 
     if (existingAdmin) {
-        throw new ApiError(409, "User with username/email already exists!");
+        throw new ApiError(409, "User with username/email/phone already exists!");
     }
 
-    const user = await Admin.create(
-        {
-            username,
-            password,
-            email,
-            role
-        })
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+        throw new ApiError(400, "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character!");
+    }
+
+    let uploadAvatar = null;
+
+    if (req.file) {
+        try {
+            uploadAvatar = await uploadOnCloudinary(req.file.path);
+
+            if (!uploadAvatar.url) {
+                throw new ApiError(400, "Error while uploading avatar!");
+            }
+        } catch (error) {
+            throw new ApiError(500, "Failed to upload avatar!");
+        }
+    }
+
+    const user = await Admin.create({
+        username,
+        password,
+        email,
+        phone,
+        avatar: uploadAvatar?.url || null,
+        role
+    })
 
     const createdUser = await Admin.findById(user._id).select(
         '-password'
@@ -61,7 +85,7 @@ const registerAdmin = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Failed to register user admin!")
     }
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(200, createdUser, "User admin registered Successfully")
     )
 
@@ -69,15 +93,15 @@ const registerAdmin = asyncHandler(async (req, res) => {
 
 const loginAdmin = asyncHandler(async (req, res) => {
 
-    const { username, password, email } = req.body;
+    const { username, password, email, phone } = req.body;
 
-    if (!(username || email)) {
-        throw new ApiError(400, "Username or password is required!")
+    if (!(username || email || phone)) {
+        throw new ApiError(400, "Username, email, or phone is required!")
     }
 
     const user = await Admin.findOne({
         $or:
-            [{ username }, { email }]
+            [{ username }, { email }, { phone }]
     })
 
     if (!user) {
@@ -119,7 +143,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
 
 const logoutAdmin = asyncHandler(async (req, res) => {
 
-    Admin.findByIdAndUpdate(
+    await Admin.findByIdAndUpdate(
         req.user._id,
         {
             $set: {
@@ -148,23 +172,23 @@ const logoutAdmin = asyncHandler(async (req, res) => {
 
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incommingrefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
-    if (!incommingrefreshToken) {
+    if (!incomingRefreshToken) {
         throw new ApiError(401, "No valid refresh token found!");
     }
 
     try {
-        const decodedrefreshToken = await jwt.verify(incommingrefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const decodedRefreshToken = await jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-        const user = await Admin.findById(decodedrefreshToken?._id);
+        const user = await Admin.findById(decodedRefreshToken?._id);
 
         if (!user) {
             throw new ApiError(403, "Invalid refresh token!");
         }
 
-        if (incommingrefreshToken !== user?.refreshToken) {
-            throw new ApiError(403, "Refresh token has expired!");
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(403, "Invalid or expired refresh token!");
         }
 
         const { accessToken, newRefreshToken } = await generateAccessTokenAndRefresToken(user._id);
@@ -202,6 +226,12 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Current password and new password are required!")
     }
 
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+        throw new ApiError(400, "New password must be at least 8 characters long and include uppercase, lowercase, number, and special character!");
+    }
+
     const user = await Admin.findById(req.user._id);
 
     const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
@@ -231,7 +261,7 @@ const validateToken = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200,user, "Token is valid!"));
+            new ApiResponse(200, user, "Token is valid!"));
 });
 
 
