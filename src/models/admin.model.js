@@ -8,11 +8,15 @@ const AdminSchema = new Schema(
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
+      trim: true,
     },
     email: {
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
+      trim: true,
     },
     phone: {
       type: String,
@@ -25,6 +29,7 @@ const AdminSchema = new Schema(
     password: {
       type: String,
       required: [true, "password is required"],
+      trim: true,
     },
     refreshToken: {
       type: String,
