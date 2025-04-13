@@ -3,7 +3,7 @@ import { ApiResponse } from '../utils/apiResponse.js';
 import { ApiError } from '../utils/apiError.js';
 import { Admin } from "../models/admin.model.js";
 import jwt from "jsonwebtoken";
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { uploadOnCloudinary,deleteFromCloudinary } from '../utils/cloudinary.js';
 
 
 
@@ -27,11 +27,11 @@ const generateAccessTokenAndRefresToken = async (userId) => {
 
 
 const registerAdmin = asyncHandler(async (req, res) => {
-    const { username, password, email, phone, role } = req.body;
+    const { firstName, lastName, username, password, email, phone, role } = req.body;
 
     const avatar = req.file?.path || null;
 
-    if ([username, password, email, phone].some((field) => field?.trim() === "")) {
+    if ([firstName, lastName, username, password, email, phone].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required!")
     }
 
@@ -75,6 +75,10 @@ const registerAdmin = asyncHandler(async (req, res) => {
     }
 
     const user = await Admin.create({
+        displayName: {
+            first: firstName,
+            last: lastName,
+        },
         username,
         password,
         email,
@@ -270,6 +274,99 @@ const validateToken = asyncHandler(async (req, res) => {
             new ApiResponse(200, user, "Token is valid!"));
 });
 
+const updateUserProfile = asyncHandler(async (req, res) => {
+    const { firstName, lastName,username,email, phone } = req.body;
+
+    if ([firstName, lastName, username, email, phone].some((field) => field?.trim() === "")) {
+        throw new ApiError(400, "All fields are required!");
+    }
+
+    const existingAdmin = await Admin.findOne(
+        {
+            $or: [
+                { email },
+                { username },
+            ]
+        }
+    );
+
+    if (existingAdmin && existingAdmin._id.toString() !== req.user._id.toString()) {
+        throw new ApiError(409, "User with this email/username already exists!");
+    }
+
+    const existingPhone = await Admin.findOne({ phone });
+
+    if (existingPhone && existingPhone._id.toString() !== req.user._id.toString()) {
+        throw new ApiError(409, "User with this phone number already exists!");
+    }
+
+    const user = await Admin.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found!");
+    }
+
+    user.displayName.first = firstName || user.displayName.first;
+    user.displayName.last = lastName || user.displayName.last;
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.phone = phone || user.phone;
+
+    await user.save({ validateBeforeSave: false });
+
+    const updatedUser = await Admin.findById(user._id).select("-password -refreshToken");
+
+    if (!updatedUser) {
+        throw new ApiError(500, "Failed to update user profile!");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "User profile updated successfully")
+    );
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    const avatarPath = req.file?.path;
+
+    if (!avatarPath) {
+        throw new ApiError(400, "Avatar is required!");
+    }
+
+    const user = await Admin.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found!");
+    }
+
+    try {
+        const uploadedAvatar = await uploadOnCloudinary(avatarPath);
+
+        if (!uploadedAvatar.url) {
+            throw new ApiError(400, "Error while uploading avatar!");
+        }
+
+        // Delete old avatar from Cloudinary if it exists
+        if (user.avatar) {
+            await deleteFromCloudinary(user.avatar);
+        }
+
+        // Update user's avatar
+        user.avatar = uploadedAvatar.url;
+        await user.save({ validateBeforeSave: false });
+
+        const updatedUser = await Admin.findById(user._id).select("-password -refreshToken");
+
+        if (!updatedUser) {
+            throw new ApiError(500, "Failed to update user avatar!");
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, updatedUser, "User avatar updated successfully")
+        );
+    } catch (error) {
+        throw new ApiError(500, `Failed to update avatar: ${error.message}`);
+    }
+});
 
 export {
     registerAdmin,
@@ -277,5 +374,7 @@ export {
     logoutAdmin,
     refreshAccessToken,
     changeCurrentPassword,
-    validateToken
+    validateToken,
+    updateUserProfile,
+    updateUserAvatar
 }
