@@ -21,7 +21,7 @@ const createRegister = asyncHandler(async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
         throw new ApiError(400, "Invalid event ID!");
     }
-    
+
     const user = await Admin.findById(userId);
 
     if (!user) {
@@ -71,14 +71,19 @@ const removeRegisterOfEvent = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid event ID!");
     }
 
-    const register = await Register.findByIdAndDelete(eventId);
+    // Check if any registration exists for the given event
+    const register = await Register.findOne({ event: eventId });
 
     if (!register) {
-        throw new ApiError(404, "Register not found!");
+        throw new ApiError(404, "No registrations found for this event!");
     }
 
-    res.status(200).json(new ApiResponse(200, {}, "Register deleted for event successfully!"));
+    // Delete all registrations for that event
+    await Register.deleteMany({ event: eventId });
+
+    res.status(200).json(new ApiResponse(200, {}, "All registrations for this event have been deleted."));
 });
+
 
 const removeAllRegister = asyncHandler(async (req, res) => {
     // Ensure the user has the required role
@@ -92,13 +97,18 @@ const removeAllRegister = asyncHandler(async (req, res) => {
 });
 
 const getRegisterByUser = asyncHandler(async (req, res) => {
-    const userId = req.user?._id;
+    const { fullName, phone } = req.body;
 
-    if (!userId) {
-        throw new ApiError(401, "User is not authenticated!");
+    if (!(fullName || phone)) {
+        throw new ApiError(400, "Full name or phone number is required!");
     }
 
-    const registers = await Register.find({ user: userId })
+    const registers = await Register.findOne({
+        $or: [
+            { name: fullName },
+            { phone: phone }
+        ]
+    })
         .populate("event", "title") // Limit fields to only 'title'
         .lean();
 
