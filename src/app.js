@@ -32,6 +32,7 @@ import facultyRouters from '../src/routes/faculty.routes.js';
 import galleryRouters from '../src/routes/gallery.routes.js';
 import feedbackRouters from '../src/routes/feedback.routes.js';
 import newsletterRouters from '../src/routes/newsletter.routes.js';
+import registerRouters from '../src/routes/register.routes.js';
 
 
 app.use('/api/v1/admin', adminRouters);
@@ -40,5 +41,6 @@ app.use('/api/v1/Faculty', facultyRouters);
 app.use('/api/v1/Gallery', galleryRouters);
 app.use('/api/v1/Feedback', feedbackRouters);
 app.use('/api/v1/Newsletter', newsletterRouters);
+app.use('/api/v1/Register', registerRouters);
 
 export  {app }
