@@ -1,4 +1,4 @@
-import Mongoose,{Schema } from "mongoose";
+import mongoose,{Schema } from "mongoose";
 
 const registerSchema = new Schema({
     name:{

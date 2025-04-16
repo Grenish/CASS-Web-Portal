@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import mongoose from "mongoose";
 import { checkUserRole } from "../middleware/auth.middleware.js";
-import { User } from "../models/admin.model.js";
+import { Admin } from "../models/admin.model.js";
 import { Event } from "../models/event.model.js";
 
 const createRegister = asyncHandler(async (req, res) => {
@@ -12,9 +12,7 @@ const createRegister = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     const userId = req.user?._id;
 
-    if (!fullName || !email || !phone) {
-        throw new ApiError(400, "All fields are required!");
-    }
+
 
     if (!userId) {
         throw new ApiError(400, "User not found!");
@@ -23,8 +21,8 @@ const createRegister = asyncHandler(async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
         throw new ApiError(400, "Invalid event ID!");
     }
-
-    const user = await User.findById(userId);
+    
+    const user = await Admin.findById(userId);
 
     if (!user) {
         throw new ApiError(404, "User not found!");

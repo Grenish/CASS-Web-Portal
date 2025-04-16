@@ -10,7 +10,7 @@ import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-router.route("/").get(getAllRegisterOfEvent);
+router.route("/id:").get(getAllRegisterOfEvent);
 router.route("/create/:eventId").post(verifyJWT, createRegister); // Create a new register (protected) 
 router.route("/user").get(verifyJWT, getRegisterByUser); // Get all registers of a user (protected) 
 router.route("/delete/:eventId").delete(verifyJWT, removeRegisterOfEvent); // Delete a register by event ID (protected)

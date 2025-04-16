@@ -11,10 +11,18 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGIN.split(',');
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
-    
 }));
 
 // console.log("ENV TEST - CLOUDINARY API KEY:", process.env.CLOUDINARY_API_KEY || "Not Loaded");
