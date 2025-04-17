@@ -17,7 +17,11 @@ app.use(helmet()); // Security middleware to set various HTTP headers
 // Middleware to enforce HTTPS
 app.use((req, res, next) => {
     if (req.headers["x-forwarded-proto"] !== "https" && process.env.NODE_ENV === "production") {
-        return res.redirect(`https://${req.headers.host}${req.url}`);
+        if (req.method === "GET" || req.method === "HEAD") {
+            return res.redirect(`https://${req.headers.host}${req.url}`);
+        } else {
+            return res.status(405).send("HTTPS is required for this request.");
+        }
     }
     next();
 });
@@ -33,6 +37,17 @@ app.use(cors({
     },
     credentials: true,
 }));
+
+app.options('*', cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }));
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
