@@ -11,7 +11,8 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
-const allowedOrigins = process.env.CORS_ORIGIN.split(',');
+// Safely handle CORS_ORIGIN environment variable
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000'];
 
 app.use(helmet()); // Security middleware to set various HTTP headers
 // Middleware to enforce HTTPS
@@ -20,34 +21,55 @@ app.use((req, res, next) => {
         if (req.method === "GET" || req.method === "HEAD") {
             return res.redirect(`https://${req.headers.host}${req.url}`);
         } else {
-            return res.status(405).send("HTTPS is required for this request.");
+            return res.status(405).json({ 
+                error: "HTTPS is required for this request in production environment." 
+            });
         }
     }
     next();
 });
 
-app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin || allowedOrigins.includes(origin)) {
+// Single CORS configuration function for reuse
+const corsOptions = {
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps, Postman, or curl requests)
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        // Create an array of allowed origin patterns
+        const allowedOriginPatterns = corsOrigins.map(o => new RegExp(`^${o.replace(/\./g, '\\.').replace(/\*/g, '.*')}$`));
+        
+        // Check if any pattern matches
+        const isAllowed = allowedOriginPatterns.some(pattern => pattern.test(origin));
+        
+        if (isAllowed) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            callback(new Error(`Origin ${origin} not allowed by CORS policy`));
         }
     },
     credentials: true,
-}));
+    exposedHeaders: ['Authorization'],
+    maxAge: 86400 // Cache preflight requests for 24 hours
+};
 
-app.options('*', cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  }));
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// CORS error handler
+app.use((err, req, res, next) => {
+    if (err.message && err.message.includes('CORS')) {
+        return res.status(403).json({
+            error: 'CORS Error',
+            message: err.message
+        });
+    }
+    next(err);
+});
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
