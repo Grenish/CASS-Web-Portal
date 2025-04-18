@@ -14,41 +14,29 @@ const app = express();
 // Safely handle CORS_ORIGIN environment variable
 const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000'];
 
-app.use(helmet()); // Security middleware to set various HTTP headers
-// Middleware to enforce HTTPS
-app.use((req, res, next) => {
-    if (req.headers["x-forwarded-proto"] !== "https" && process.env.NODE_ENV === "production") {
-        if (req.method === "GET" || req.method === "HEAD") {
-            return res.redirect(`https://${req.headers.host}${req.url}`);
-        } else {
-            return res.status(405).json({ 
-                error: "HTTPS is required for this request in production environment." 
-            });
-        }
+// Function to validate CORS origin
+const validateOrigin = (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, Postman, or curl requests)
+    if (!origin) {
+        return callback(null, true);
     }
-    next();
-});
 
-// Single CORS configuration function for reuse
+    // Check if the origin matches any allowed origins
+    const isAllowed = corsOrigins.some((allowedOrigin) => {
+        const regex = new RegExp(`^${allowedOrigin.replace(/\./g, '\\.').replace(/\*/g, '.*')}$`);
+        return regex.test(origin);
+    });
+
+    if (isAllowed) {
+        callback(null, true);
+    } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+    }
+};
+
+// CORS options
 const corsOptions = {
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps, Postman, or curl requests)
-        if (!origin) {
-            return callback(null, true);
-        }
-        
-        // Create an array of allowed origin patterns
-        const allowedOriginPatterns = corsOrigins.map(o => new RegExp(`^${o.replace(/\./g, '\\.').replace(/\*/g, '.*')}$`));
-        
-        // Check if any pattern matches
-        const isAllowed = allowedOriginPatterns.some(pattern => pattern.test(origin));
-        
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            callback(new Error(`Origin ${origin} not allowed by CORS policy`));
-        }
-    },
+    origin: validateOrigin,
     credentials: true,
     exposedHeaders: ['Authorization'],
     maxAge: 86400 // Cache preflight requests for 24 hours
@@ -69,6 +57,22 @@ app.use((err, req, res, next) => {
         });
     }
     next(err);
+});
+
+app.use(helmet()); // Security middleware to set various HTTP headers
+
+// Middleware to enforce HTTPS
+app.use((req, res, next) => {
+    if (req.headers["x-forwarded-proto"] !== "https" && process.env.NODE_ENV === "production") {
+        if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+            return res.redirect(`https://${req.headers.host}${req.url}`);
+        } else {
+            return res.status(405).json({ 
+                error: "HTTPS is required for this request in production environment." 
+            });
+        }
+    }
+    next();
 });
 
 app.use(express.json({ limit: "16kb" }));
