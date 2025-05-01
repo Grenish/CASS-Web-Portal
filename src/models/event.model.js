@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+import slugify from "slugify";
 
 const eventSchema = new Schema(
   {
@@ -13,12 +13,19 @@ const eventSchema = new Schema(
       enum: ["Event", "Blog"],
       required: true
     },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
     media: {
       type: String,
       required: true,
       validate: {
         validator: function (v) {
-          return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/.test(v); // Example regex for image URLs
+          return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/.test(v);
         },
         message: "Invalid media URL format",
       },
@@ -27,5 +34,24 @@ const eventSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Pre-validate hook to create unique slug
+eventSchema.pre("validate", async function (next) {
+  if (this.title && !this.slug) {
+    let baseSlug = slugify(this.title, { lower: true, strict: true });
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+
+    // Check for existing slugs
+    while (await mongoose.models.Event.findOne({ slug: uniqueSlug })) {
+      uniqueSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    this.slug = uniqueSlug;
+  }
+  next();
+});
+
 
 export const Event = mongoose.model("Event", eventSchema);
