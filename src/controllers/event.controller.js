@@ -9,7 +9,17 @@ import { checkUserRole } from "../middleware/auth.middleware.js";
 const createEvent = asyncHandler(async (req, res) => {
   checkUserRole(req);
 
-  const { title, description, category, date, time, content, location, mediaUrl } = req.body;
+  const { title, description, date, time, content, location, mediaUrl } = req.body;
+  
+  // Normalize category to match enum values (Event or Blog)
+  let { category } = req.body;
+  if (category) {
+    category = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+    
+    if (category !== "Event" && category !== "Blog") {
+      throw new ApiError(400, "Category must be either 'Event' or 'Blog'!");
+    }
+  }
   
   if (
     !title ||
@@ -23,14 +33,12 @@ const createEvent = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required!");
   }
 
-  // Handle media - either from direct URL or file upload
+  // Handle media from direct URL or file upload
   let mediaPath;
   
   if (mediaUrl) {
-    // Use the provided URL directly
     mediaPath = mediaUrl;
   } else if (req.file?.path) {
-    // Upload file to Cloudinary if no URL was provided
     const media = await uploadOnCloudinary(req.file.path);
     if (!media.url) throw new ApiError(400, "Error while uploading media file!");
     mediaPath = media.url;
@@ -68,9 +76,9 @@ const getEventById = asyncHandler(async (req, res) => {
 
   const event = await Event.findOne({
     $or: [
-      { _id: mongoose.Types.ObjectId.isValid(identifier) ? identifier : null },
+      { _id: mongoose.isValidObjectId(identifier) ? new mongoose.Types.ObjectId(identifier) : null },
       { title: { $regex: new RegExp(identifier, "i") } },
-      { slug: identifier }, // Added slug as a search option
+      { slug: identifier },
     ],
   });
 
@@ -107,7 +115,6 @@ const updateEvent = asyncHandler(async (req, res) => {
     media = uploadedMedia.url;
   }
 
-  // Update only the provided fields
   event.title = title || event.title;
   event.description = description || event.description;
   event.date = date || event.date;
