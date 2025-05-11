@@ -93,4 +93,13 @@ app.use('/api/v1/Feedback', feedbackRouters);
 app.use('/api/v1/Newsletter', newsletterRouters);
 app.use('/api/v1/Register', registerRouters);
 
+// Root route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Welcome to CASS Web Portal API',
+    version: '1.0'
+  });
+});
+
 export { app };
