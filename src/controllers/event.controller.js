@@ -3,17 +3,14 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import { Event } from "../models/event.model.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
-import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
 import { checkUserRole } from "../middleware/auth.middleware.js";
-
 
 const createEvent = asyncHandler(async (req, res) => {
   checkUserRole(req);
 
-  const { title, description, category, date, time, content, location } = req.body;
-  const localMediaPath = req.file?.path;
-
+  const { title, description, category, date, time, content, location, mediaUrl } = req.body;
+  
   if (
     !title ||
     !description ||
@@ -21,14 +18,25 @@ const createEvent = asyncHandler(async (req, res) => {
     !date ||
     !time ||
     !content ||
-    !location ||
-    !localMediaPath
+    !location
   ) {
-    throw new ApiError(400, "All fields and media file are required!");
+    throw new ApiError(400, "All fields are required!");
   }
 
-  const media = await uploadOnCloudinary(localMediaPath);
-  if (!media.url) throw new ApiError(400, "Error while uploading media file!");
+  // Handle media - either from direct URL or file upload
+  let mediaPath;
+  
+  if (mediaUrl) {
+    // Use the provided URL directly
+    mediaPath = mediaUrl;
+  } else if (req.file?.path) {
+    // Upload file to Cloudinary if no URL was provided
+    const media = await uploadOnCloudinary(req.file.path);
+    if (!media.url) throw new ApiError(400, "Error while uploading media file!");
+    mediaPath = media.url;
+  } else {
+    throw new ApiError(400, "Media file or URL is required!");
+  }
 
   const newEvent = await Event.create({
     title,
@@ -37,7 +45,7 @@ const createEvent = asyncHandler(async (req, res) => {
     date,
     time,
     content,
-    media: media.url,
+    media: mediaPath,
     location,
   });
   res
