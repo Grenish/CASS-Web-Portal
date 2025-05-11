@@ -65,15 +65,19 @@ const getAllEvents = asyncHandler(async (req, res) => {
 
 const getEventById = asyncHandler(async (req, res) => {
   const { identifier } = req.params;
+
   const event = await Event.findOne({
     $or: [
       { _id: mongoose.Types.ObjectId.isValid(identifier) ? identifier : null },
       { title: { $regex: new RegExp(identifier, "i") } },
+      { slug: identifier }, // Added slug as a search option
     ],
   });
+
   if (!event) {
     throw new ApiError(404, "Event not found!");
   }
+
   res
     .status(200)
     .json(new ApiResponse(200, event, "Event details fetched successfully"));
