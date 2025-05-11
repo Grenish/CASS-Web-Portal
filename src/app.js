@@ -8,7 +8,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from "helmet";
 import cookieParser from 'cookie-parser';
-import { ApiResponse } from "./utils/apiResponse.js";
 
 const app = express();
 
@@ -85,32 +84,6 @@ import galleryRouters from '../src/routes/gallery.routes.js';
 import feedbackRouters from '../src/routes/feedback.routes.js';
 import newsletterRouters from '../src/routes/newsletter.routes.js';
 import registerRouters from '../src/routes/register.routes.js';
-import uploadRouters from '../src/routes/upload.routes.js';
-
-// Root route
-app.get('/', (req, res) => {
-  res.status(200).json(
-    new ApiResponse(
-      200, 
-      {
-        message: "Welcome to CASS Web Portal API",
-        version: "1.0.0",
-        documentation: "/api-docs", // For future API documentation
-        endpoints: {
-          events: "/api/v1/Events",
-          faculty: "/api/v1/Faculty",
-          gallery: "/api/v1/Gallery",
-          feedback: "/api/v1/Feedback",
-          newsletter: "/api/v1/Newsletter",
-          register: "/api/v1/Register",
-          admin: "/api/v1/admin",
-          upload: "/api/v1/upload"
-        }
-      },
-      "API is running successfully"
-    )
-  );
-});
 
 app.use('/api/v1/admin', adminRouters);
 app.use('/api/v1/Events', eventsRouters);
@@ -119,6 +92,5 @@ app.use('/api/v1/Gallery', galleryRouters);
 app.use('/api/v1/Feedback', feedbackRouters);
 app.use('/api/v1/Newsletter', newsletterRouters);
 app.use('/api/v1/Register', registerRouters);
-app.use('/api/v1/upload', uploadRouters);
 
 export { app };
