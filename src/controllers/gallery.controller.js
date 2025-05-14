@@ -5,160 +5,165 @@ import { Gallery } from '../models/gallery.model.js';
 import { uploadOnCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
 import { checkUserRole } from '../middleware/auth.middleware.js';
 
-// ✅ Create a New Gallery Bucket (With Multiple Images)
+// Create a single gallery item (one image with metadata)
 const createGallery = asyncHandler(async (req, res) => {
     try {
-        checkUserRole(req); // Ensure only admin can create gallery
+        checkUserRole(req); // Ensure only admin can create gallery items
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(
-            new ApiResponse(error.statusCode || 500, null, error.message)
-        );
+            .status(error.statusCode || 500)
+            .json(new ApiResponse(error.statusCode || 500, null, error.message));
     }
 
-    const { title, description } = req.body;
-    if (!title || !req.files || req.files.length === 0) {
-        throw new ApiError(400, "Title and at least one image are required!");
+    const { title, category, featured, caption } = req.body;
+    const providedImageUrl = req.body.imageUrl; // Get URL from body if provided
+    
+    if (!title) {
+        throw new ApiError(400, "Title is required!");
     }
-
-    let images = [];
-
-    for (const file of req.files) {
-        const uploadedImage = await uploadOnCloudinary(file.path);
-        if (uploadedImage.url) {
-            images.push({ imageUrl: uploadedImage.url });
+    
+    // Handle image from direct URL or file upload
+    let finalImageUrl;
+    
+    if (providedImageUrl) {
+        finalImageUrl = providedImageUrl;
+    } else if (req.file?.path) {
+        const uploadedImage = await uploadOnCloudinary(req.file.path);
+        if (!uploadedImage.url) {
+            throw new ApiError(400, "Error while uploading image!");
         }
+        finalImageUrl = uploadedImage.url;
+    } else {
+        throw new ApiError(400, "Image file or URL is required!");
     }
 
-    const gallery = await Gallery.create({ title, description, images });
+    const galleryItem = await Gallery.create({
+        title,
+        category,
+        featured: featured === 'true' || featured === true,
+        imageUrl: finalImageUrl,
+        caption
+    });
 
     res
-    .status(201)
-    .json(
-        new ApiResponse(201, gallery, "Gallery created successfully!")
-    );
+        .status(201)
+        .json(new ApiResponse(201, galleryItem, "Gallery item created successfully!"));
 });
 
-// ✅ Add Images to an Existing Gallery
-const addImagesToGallery = asyncHandler(async (req, res) => {
+// Get all gallery items
+const getAllGalleries = asyncHandler(async (req, res) => {
+    const galleries = await Gallery.find().sort({ createdAt: -1 });
+    if (!galleries.length) throw new ApiError(404, "No gallery items found!");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, galleries, "All gallery items fetched successfully"));
+});
+
+// Get a specific gallery item by ID
+const getGalleryById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const gallery = await Gallery.findById(id);
+    if (!gallery) throw new ApiError(404, "Gallery item not found!");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, gallery, "Gallery item fetched successfully"));
+});
+
+// Update a gallery item
+const updateGallery = asyncHandler(async (req, res) => {
     try {
         checkUserRole(req); // Ensure only admin can update gallery
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiResponse(error.statusCode || 500, null, error.message)
-    );
+            .status(error.statusCode || 500)
+            .json(new ApiResponse(error.statusCode || 500, null, error.message));
     }
 
     const { id } = req.params;
+    const { title, category, featured, caption } = req.body;
+    const providedImageUrl = req.body.imageUrl; // Get URL from body if provided
+
     const gallery = await Gallery.findById(id);
+    if (!gallery) throw new ApiError(404, "Gallery item not found!");
 
-    if (!gallery) throw new ApiError(404, "Gallery not found!");
-
-    if (!req.files || req.files.length === 0) {
-        throw new ApiError(400, "At least one image is required!");
-    }
-
-    for (const file of req.files) {
-        const uploadedImage = await uploadOnCloudinary(file.path);
-        if (uploadedImage.url) {
-            gallery.images.push({ imageUrl: uploadedImage.url });
-        }
-    }
-
-    await gallery.save();
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, gallery, "Images added to gallery successfully!")
-    );
-});
-
-// ✅ Get All Galleries
-const getAllGalleries = asyncHandler(async (req, res) => {
-    const galleries = await Gallery.find().sort({ createdAt: -1 });
-    if (!galleries.length) throw new ApiError(404, "No galleries found!");
-
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, galleries, "All galleries fetched successfully")
-    );
-});
-
-// ✅ Get a Specific Gallery by ID
-const getGalleryById = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const gallery = await Gallery.findById(id);
-    if (!gallery) throw new ApiError(404, "Gallery not found!");
-
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, gallery, "Gallery details fetched successfully")
-    );
-});
-
-// ✅ Delete a Specific Image from a Gallery
-const deleteImageFromGallery = asyncHandler(async (req, res) => {
-    try {
-        checkUserRole(req); // Ensure only admin can delete images
-    } catch (error) {
-        return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
-    }
-
-    const { id, imageId } = req.params;
-    const gallery = await Gallery.findById(id);
+    // Update image if a new file is uploaded
+    let finalImageUrl = gallery.imageUrl;
     
-    if (!gallery) throw new ApiError(404, "Gallery not found!");
-
-    const imageToDelete = gallery.images.find(img => img._id.toString() === imageId);
-
-    if (!imageToDelete) throw new ApiError(404, "Image not found in gallery!");
-
-    try {
-        await deleteFromCloudinary(imageToDelete.imageUrl);
-    } catch (error) {
-        console.error("Failed to delete image from Cloudinary:", error);
+    if (req.file?.path) {
+        // Delete old image from Cloudinary
+        try {
+            if (gallery.imageUrl) {
+                await deleteFromCloudinary(gallery.imageUrl);
+            }
+        } catch (error) {
+            console.error("Failed to delete old image from Cloudinary:", error);
+        }
+        
+        // Upload new image
+        const uploadedImage = await uploadOnCloudinary(req.file.path);
+        if (!uploadedImage.url) {
+            throw new ApiError(400, "Error while uploading image!");
+        }
+        finalImageUrl = uploadedImage.url;
+    } else if (providedImageUrl && providedImageUrl !== gallery.imageUrl) {
+        // If a new imageUrl is provided
+        try {
+            if (gallery.imageUrl) {
+                await deleteFromCloudinary(gallery.imageUrl);
+            }
+        } catch (error) {
+            console.error("Failed to delete old image from Cloudinary:", error);
+        }
+        finalImageUrl = providedImageUrl;
     }
 
-    gallery.images = gallery.images.filter(img => img._id.toString() !== imageId);
-    await gallery.save();
+    gallery.title = title || gallery.title;
+    gallery.category = category || gallery.category;
+    gallery.featured = featured === 'true' || featured === true || (featured !== 'false' && featured !== false && gallery.featured);
+    gallery.caption = caption !== undefined ? caption : gallery.caption;
+    gallery.imageUrl = finalImageUrl;
 
-    res.status(200).json(new ApiResponse(200, gallery, "Image deleted from gallery successfully"));
+    await gallery.save();
+    
+    return res
+        .status(200)
+        .json(new ApiResponse(200, gallery, "Gallery item updated successfully"));
 });
 
-// ✅ Delete an Entire Gallery (Including All Images)
+// Delete a gallery item
 const deleteGallery = asyncHandler(async (req, res) => {
     try {
         checkUserRole(req); // Ensure only admin can delete gallery
     } catch (error) {
-        return res.status(error.statusCode || 500).json(new ApiResponse(error.statusCode || 500, null, error.message));
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiResponse(error.statusCode || 500, null, error.message));
     }
 
     const { id } = req.params;
     const gallery = await Gallery.findById(id);
-    if (!gallery) throw new ApiError(404, "Gallery not found!");
+    if (!gallery) throw new ApiError(404, "Gallery item not found!");
 
+    // Delete image from Cloudinary
     try {
-        for (const image of gallery.images) {
-            await deleteFromCloudinary(image.imageUrl);
+        if (gallery.imageUrl) {
+            await deleteFromCloudinary(gallery.imageUrl);
         }
     } catch (error) {
-        console.error("Failed to delete images from Cloudinary:", error);
+        console.error("Failed to delete image from Cloudinary:", error);
     }
 
     await Gallery.findByIdAndDelete(id);
 
-    res.status(200).json(new ApiResponse(200, {}, "Gallery deleted successfully"));
+    res.status(200).json(new ApiResponse(200, {}, "Gallery item deleted successfully"));
 });
 
 export { 
     createGallery, 
-    addImagesToGallery, 
     getAllGalleries, 
     getGalleryById, 
-    deleteImageFromGallery, 
+    updateGallery,
     deleteGallery 
 };

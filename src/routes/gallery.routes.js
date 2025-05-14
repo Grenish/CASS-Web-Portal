@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { 
-    createGallery, 
-    addImagesToGallery, 
+    createGallery,
     getAllGalleries, 
-    getGalleryById, 
-    deleteImageFromGallery, 
+    getGalleryById,
+    updateGallery,
     deleteGallery 
 } from '../controllers/gallery.controller.js';
 import { verifyJWT } from '../middleware/auth.middleware.js';
@@ -17,9 +16,8 @@ router.route('/').get(getAllGalleries);
 router.route('/:id').get(getGalleryById);
 
 // Admin-Protected Routes
-router.route('/create').post(verifyJWT, upload.array("images", 10), createGallery);
-router.route('/add-images/:id').patch(verifyJWT, upload.array("images", 10), addImagesToGallery);
+router.route('/create').post(verifyJWT, upload.single("imageUrl"), createGallery);
+router.route('/update/:id').patch(verifyJWT, upload.single("imageUrl"), updateGallery);
 router.route('/delete/:id').delete(verifyJWT, deleteGallery);
-router.route('/delete-image/:id/:imageId').delete(verifyJWT, deleteImageFromGallery);
 
 export default router;

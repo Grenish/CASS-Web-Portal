@@ -1,14 +1,14 @@
 import mongoose, { Schema } from "mongoose";
 
 const gallerySchema = new Schema({
-    title: { type: String, required: true }, // Gallery title
-    description: { type: String }, // Optional description
-    images: [
-        {
-            imageUrl: { type: String, required: true }, // Cloudinary Image URL
-            uploadedAt: { type: Date, default: Date.now }, // Time of upload
-        }
-    ],
+    title: { type: String, required: true, trim: true },
+    category: {
+        type: String,
+        default: 'Other'
+    },
+    imageUrl: { type: String, required: true },
+    caption: { type: String },
+    uploadedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 export const Gallery = mongoose.model("Gallery", gallerySchema);
